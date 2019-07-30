@@ -13,6 +13,15 @@ struct Explosion {
     color: Rgb,
 }
 
+struct Rocket {
+    x: i32,
+    y: i32,
+    vx: i32,
+    vy: i32,
+    who: char,
+    color: Rgb,
+}
+
 fn bright_color() -> Rgb {
     let mut r = rand::random::<u8>();
     let mut g = rand::random::<u8>();
@@ -40,6 +49,7 @@ fn main() -> Result<(), std::io::Error> {
     let mut the_char = alphabet[rand::random::<usize>() % alphabet.len()];
     let mut the_color = bright_color();
     let mut explosions: Vec<Explosion> = Vec::new();
+    let mut rockets: Vec<Rocket> = Vec::new();
     let fragments = vec![
         vec!['*'],
         vec!['*','+','/','\\','-','|'],
@@ -87,6 +97,15 @@ fn main() -> Result<(), std::io::Error> {
                             the_color = bright_color();
                             x = (rand::random::<u16>() % a) + 1;
                             y = (rand::random::<u16>() % b) + 1;
+                        } else {
+                            rockets.push(Rocket {
+                                x: ((rand::random::<u16>() % a) + 1) as i32,
+                                y: b as i32,
+                                vy: -1,
+                                vx: rand::random::<i32>() % 3 - 1,
+                                color: bright_color(),
+                                who: c,
+                            });
                         }
                     }
                     _ => (),
@@ -118,6 +137,33 @@ fn main() -> Result<(), std::io::Error> {
                 }
                 e.fuse += 1;
             }
+            for r in rockets.iter_mut() {
+                if rand::random::<u16>() % b == 0 {
+                    explosions.push(Explosion {
+                        x: r.x,
+                        y: r.y,
+                        color: r.color,
+                        fuse: 0,
+                    });
+                    r.x = 0;
+                } else {
+                    write!(screen, "{}{}{}",
+                           termion::cursor::Goto(r.x as u16,
+                                                 r.y as u16),
+                           Fg(Rgb(255,0,0)),
+                           '^',
+                    ).unwrap();
+                    r.x += r.vx;
+                    r.y += r.vy;
+                    write!(screen, "{}{}{}",
+                           termion::cursor::Goto(r.x as u16,
+                                                 r.y as u16),
+                           Fg(r.color),
+                           r.who,
+                    ).unwrap();
+                }
+            }
+            rockets.retain(|r| r.x > 0 && r.x < a as i32 && r.y > 0);
             explosions.retain(|e| e.fuse < fragments.len() as i32);
             write!(screen, "{}{}{}",
                    termion::cursor::Goto(x, y),

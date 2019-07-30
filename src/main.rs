@@ -39,6 +39,18 @@ fn main() -> Result<(), std::io::Error> {
     let mut the_char = alphabet[rand::random::<usize>() % alphabet.len()];
     let mut the_color = bright_color();
     let mut explosions: Vec<Explosion> = Vec::new();
+    let fragments = vec![
+        vec!['*'],
+        vec!['*','+','/','\\','-','|'],
+        vec!['*','+','/','\\','-','|'],
+        vec!['+','/','\\','-','|'],
+        vec!['.','+','`','\'',',',' '],
+        vec!['.','+','`','\'',',',' '],
+        vec!['.','+','`','\'',',',' ',' '],
+        vec!['.','`','\'',',',' ',' ',' '],
+        vec!['.',' '],
+        vec!['.',' ',' '],
+    ];
     loop {
         let (a,b) = termion::terminal_size()?;
         {
@@ -79,21 +91,22 @@ fn main() -> Result<(), std::io::Error> {
                 }
             }
             for e in explosions.iter_mut() {
-                for dx in &[-1,0,1] {
-                    for dy in &[-1,0,1] {
-                        if e.x + e.fuse*dx > 0 && e.y + e.fuse*dy > 0 {
+                let fr = &fragments[e.fuse as usize];
+                for dx in -e.fuse ..= e.fuse {
+                    for dy in -e.fuse ..= e.fuse {
+                        if e.x + dx > 0 && e.y + dy > 0 && dx*dx + 2*dy*dy < e.fuse*e.fuse {
                             write!(screen, "{}{}{}",
-                                   termion::cursor::Goto((e.x+e.fuse*dx) as u16,
-                                                         (e.y+e.fuse*dy) as u16),
+                                   termion::cursor::Goto((e.x+dx) as u16,
+                                                         (e.y+dy) as u16),
                                    Fg(Rgb(255, 255-20*(e.fuse as u8),0)),
-                                   '.',
+                                   fr[rand::random::<usize>() % fr.len()],
                             ).unwrap();
                         }
                     }
                 }
                 e.fuse += 1;
             }
-            explosions.retain(|e| e.fuse < 10);
+            explosions.retain(|e| e.fuse < fragments.len() as i32);
             write!(screen, "{}{}{}",
                    termion::cursor::Goto(x, y),
                    Fg(the_color),

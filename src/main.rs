@@ -102,7 +102,7 @@ fn main() -> Result<(), std::io::Error> {
                                 x: ((rand::random::<u16>() % a) + 1) as i32,
                                 y: b as i32,
                                 vy: -1,
-                                vx: rand::random::<i32>() % 3 - 1,
+                                vx: 0, // rand::random::<i32>() % 3 - 1,
                                 color: bright_color(),
                                 who: c,
                             });
@@ -138,7 +138,7 @@ fn main() -> Result<(), std::io::Error> {
                 e.fuse += 1;
             }
             for r in rockets.iter_mut() {
-                if rand::random::<u16>() % b == 0 {
+                if rand::random::<u16>() % (b/2) == 0 {
                     explosions.push(Explosion {
                         x: r.x,
                         y: r.y,
@@ -146,6 +146,12 @@ fn main() -> Result<(), std::io::Error> {
                         fuse: 0,
                     });
                     r.x = 0;
+                    write!(screen, "{}{}{}",
+                           termion::cursor::Goto(r.x as u16,
+                                                 r.y as u16),
+                           Fg(r.color),
+                           '*',
+                    ).unwrap();
                 } else {
                     write!(screen, "{}{}{}",
                            termion::cursor::Goto(r.x as u16,

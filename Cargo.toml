@@ -1,5 +1,5 @@
 [package]
-name = "typing-game"
+name = "keyboard-fireworks"
 version = "0.1.0"
 authors = ["droundy <roundyd@physics.oregonstate.edu>"]
 edition = "2018"

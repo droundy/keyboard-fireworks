@@ -39,6 +39,7 @@ fn bright_color() -> Rgb {
 fn main() -> Result<(), std::io::Error> {
     let mut _raw_stdout = termion::cursor::HideCursor::from(stdout().into_raw_mode().unwrap());
     let mut stdin = termion::async_stdin().keys();
+    let device = rodio::default_output_device().unwrap();
     let (a,b) = termion::terminal_size()?;
     let mut x = (rand::random::<u16>() % a) + 1;
     let mut y = (rand::random::<u16>() % b) + 1;
@@ -145,13 +146,13 @@ fn main() -> Result<(), std::io::Error> {
                         color: r.color,
                         fuse: 0,
                     });
-                    r.x = 0;
                     write!(screen, "{}{}{}",
                            termion::cursor::Goto(r.x as u16,
                                                  r.y as u16),
                            Fg(r.color),
                            '*',
                     ).unwrap();
+                    r.x = 0;
                 } else {
                     write!(screen, "{}{}{}",
                            termion::cursor::Goto(r.x as u16,

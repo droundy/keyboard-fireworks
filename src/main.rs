@@ -10,6 +10,7 @@ struct Explosion {
     x: i32,
     y: i32,
     fuse: i32,
+    color: Rgb,
 }
 
 fn bright_color() -> Rgb {
@@ -71,7 +72,7 @@ fn main() -> Result<(), std::io::Error> {
             if y >= b {
                 y = b;
             }
-            if let Some(k) = stdin.next() {
+            while let Some(k) = stdin.next() {
                 match k {
                     Ok(Key::Esc) => return Ok(()),
                     Ok(Key::Char(c)) => {
@@ -80,6 +81,7 @@ fn main() -> Result<(), std::io::Error> {
                                 x: x as i32,
                                 y: y as i32,
                                 fuse: 1,
+                                color: the_color,
                             });
                             the_char = alphabet[rand::random::<usize>() % alphabet.len()];
                             the_color = bright_color();
@@ -92,13 +94,23 @@ fn main() -> Result<(), std::io::Error> {
             }
             for e in explosions.iter_mut() {
                 let fr = &fragments[e.fuse as usize];
+                const DIMINISH: u8 = 20;
+                if e.color.0 > DIMINISH/2 {
+                    e.color.0 -= DIMINISH/2;
+                }
+                if e.color.1 > DIMINISH {
+                    e.color.1 -= DIMINISH;
+                }
+                if e.color.2 > DIMINISH {
+                    e.color.2 -= DIMINISH;
+                }
                 for dx in -e.fuse ..= e.fuse {
                     for dy in -e.fuse ..= e.fuse {
                         if e.x + dx > 0 && e.y + dy > 0 && dx*dx + 2*dy*dy < e.fuse*e.fuse {
                             write!(screen, "{}{}{}",
                                    termion::cursor::Goto((e.x+dx) as u16,
                                                          (e.y+dy) as u16),
-                                   Fg(Rgb(255, 255-20*(e.fuse as u8),0)),
+                                   Fg(e.color),
                                    fr[rand::random::<usize>() % fr.len()],
                             ).unwrap();
                         }

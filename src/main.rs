@@ -178,7 +178,6 @@ fn main() -> Result<(), std::io::Error> {
             ).unwrap();
             screen.flush().unwrap();
         }
-        // screen.flush().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 }

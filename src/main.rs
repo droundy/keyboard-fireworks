@@ -125,12 +125,12 @@ fn main() -> Result<(), std::io::Error> {
                 }
                 for dx in -e.fuse ..= e.fuse {
                     for dy in -e.fuse ..= e.fuse {
-                        if e.x + dx > 0 && e.y + dy > 0 && dx*dx + 2*dy*dy < e.fuse*e.fuse {
+                        let f = fr[rand::random::<usize>() % fr.len()];
+                        if e.x + dx > 0 && e.y + dy > 0 && dx*dx + 2*dy*dy < e.fuse*e.fuse && f != ' ' {
                             write!(screen, "{}{}{}",
                                    termion::cursor::Goto((e.x+dx) as u16,
                                                          (e.y+dy) as u16),
-                                   Fg(e.color),
-                                   fr[rand::random::<usize>() % fr.len()],
+                                   Fg(e.color), f,
                             ).unwrap();
                         }
                     }

@@ -6,6 +6,8 @@ use termion::screen::AlternateScreen;
 use std::io::{Write, stdout};
 use termion::color::{Rgb, Fg};
 
+mod beep;
+
 struct Explosion {
     x: i32,
     y: i32,
@@ -88,6 +90,7 @@ fn main() -> Result<(), std::io::Error> {
                     Ok(Key::Esc) => return Ok(()),
                     Ok(Key::Char(c)) => {
                         if c.to_lowercase().next() == the_char.to_lowercase().next() {
+                            rodio::play_raw(&device, beep::Chirp::up(std::time::Duration::from_secs(2)));
                             explosions.push(Explosion {
                                 x: x as i32,
                                 y: y as i32,
@@ -140,6 +143,7 @@ fn main() -> Result<(), std::io::Error> {
             }
             for r in rockets.iter_mut() {
                 if rand::random::<u16>() % (b/2) == 0 {
+                    rodio::play_raw(&device, beep::Chirp::down(std::time::Duration::from_secs(2)));
                     explosions.push(Explosion {
                         x: r.x,
                         y: r.y,

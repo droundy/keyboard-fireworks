@@ -6,7 +6,15 @@ use termion::screen::AlternateScreen;
 use std::io::{Write, stdout};
 use termion::color::{Rgb, Fg};
 
+use auto_args::AutoArgs;
+
 mod beep;
+
+#[derive(AutoArgs)]
+struct Flags {
+    /// Enable sound effects
+    sound: bool,
+}
 
 struct Explosion {
     x: i32,
@@ -39,9 +47,20 @@ fn bright_color() -> Rgb {
 }
 
 fn main() -> Result<(), std::io::Error> {
+    let flags = Flags::from_args();
     let mut _raw_stdout = termion::cursor::HideCursor::from(stdout().into_raw_mode().unwrap());
     let mut stdin = termion::async_stdin().keys();
     let device = rodio::default_output_device().unwrap();
+    let up_chirp = || {
+        if flags.sound {
+            rodio::play_raw(&device, beep::Chirp::up(std::time::Duration::from_secs(2)));
+        }
+    };
+    let down_chirp = || {
+        if flags.sound {
+            rodio::play_raw(&device, beep::Chirp::down(std::time::Duration::from_secs(2)));
+        }
+    };
     let (a,b) = termion::terminal_size()?;
     let mut x = (rand::random::<u16>() % a) + 1;
     let mut y = (rand::random::<u16>() % b) + 1;
@@ -90,7 +109,7 @@ fn main() -> Result<(), std::io::Error> {
                     Ok(Key::Esc) => return Ok(()),
                     Ok(Key::Char(c)) => {
                         if c.to_lowercase().next() == the_char.to_lowercase().next() {
-                            rodio::play_raw(&device, beep::Chirp::up(std::time::Duration::from_secs(2)));
+                            down_chirp();
                             explosions.push(Explosion {
                                 x: x as i32,
                                 y: y as i32,
@@ -143,7 +162,7 @@ fn main() -> Result<(), std::io::Error> {
             }
             for r in rockets.iter_mut() {
                 if rand::random::<u16>() % (b/2) == 0 {
-                    rodio::play_raw(&device, beep::Chirp::down(std::time::Duration::from_secs(2)));
+                    up_chirp();
                     explosions.push(Explosion {
                         x: r.x,
                         y: r.y,

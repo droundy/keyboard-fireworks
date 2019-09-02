@@ -14,6 +14,18 @@ mod beep;
 struct Flags {
     /// Enable sound effects
     sound: bool,
+    /// Bits for the words
+    word_bits: Option<usize>,
+}
+
+impl Flags {
+    fn words(&self) -> String {
+        if let Some(bits) = self.word_bits {
+            memorable_wordlist::space_delimited(bits)
+        } else {
+            memorable_wordlist::space_delimited(8)
+        }
+    }
 }
 
 struct Explosion {
@@ -46,6 +58,20 @@ fn bright_color() -> Rgb {
     Rgb(r,g,b)
 }
 
+fn dim_color() -> Rgb {
+    let mut r = rand::random::<u8>();
+    let mut g = rand::random::<u8>();
+    let mut b = rand::random::<u8>();
+    if r >= b && r >= g {
+        r = 127;
+    } else if g >= b {
+        g = 127;
+    } else {
+        b = 127;
+    }
+    Rgb(r,g,b)
+}
+
 fn main() -> Result<(), std::io::Error> {
     let flags = Flags::from_args();
     let mut _raw_stdout = termion::cursor::HideCursor::from(stdout().into_raw_mode().unwrap());
@@ -70,6 +96,14 @@ fn main() -> Result<(), std::io::Error> {
         .collect::<Vec<_>>();          // Collect as Vec<char>
     let mut the_char = alphabet[rand::random::<usize>() % alphabet.len()];
     let mut the_color = bright_color();
+
+    let mut wordx = (rand::random::<u16>() % a) + 1;
+    let mut wordy = (rand::random::<u16>() % b) + 1;
+    let mut the_word = flags.words();
+    let mut word_color = bright_color();
+    let mut gotten_letter_color = dim_color();
+    let mut gotten_characters = String::new();
+
     let mut explosions: Vec<Explosion> = Vec::new();
     let mut rockets: Vec<Rocket> = Vec::new();
     let fragments = vec![
@@ -104,10 +138,30 @@ fn main() -> Result<(), std::io::Error> {
             if y >= b {
                 y = b;
             }
+
+            if wordx > 0 {
+                wordx = wordx - 1 + (rand::random::<u16>() % 3);
+            } else {
+                wordx = wordx + (rand::random::<u16>() % 2);
+            }
+            if wordx as usize + the_word.len() >= a as usize {
+                wordx = a - the_word.len() as u16;
+            }
+            if wordy > 0 {
+                wordy = wordy - 1 + (rand::random::<u16>() % 3);
+            } else {
+                wordy = wordy + (rand::random::<u16>() % 2);
+            }
+            if wordy >= b {
+                wordy = b;
+            }
             while let Some(k) = stdin.next() {
                 match k {
                     Ok(Key::Esc) => return Ok(()),
                     Ok(Key::Char(c)) => {
+                        if the_word.contains(c) {
+                            gotten_characters.push(c);
+                        }
                         if c.to_lowercase().next() == the_char.to_lowercase().next() {
                             down_chirp();
                             explosions.push(Explosion {
@@ -120,7 +174,7 @@ fn main() -> Result<(), std::io::Error> {
                             the_color = bright_color();
                             x = (rand::random::<u16>() % a) + 1;
                             y = (rand::random::<u16>() % b) + 1;
-                        } else {
+                        } else  {
                             rockets.push(Rocket {
                                 x: ((rand::random::<u16>() % a) + 1) as i32,
                                 y: b as i32,
@@ -200,6 +254,25 @@ fn main() -> Result<(), std::io::Error> {
                    Fg(the_color),
                    the_char,
             ).unwrap();
+            write!(screen, "{}",
+                   termion::cursor::Goto(wordx, wordy)).unwrap();
+            let mut gotten = gotten_characters.clone();
+            let mut all_done = true;
+            for c in the_word.chars() {
+                if gotten.contains(c) || c == ' ' {
+                    write!(screen, "{}{}", Fg(gotten_letter_color), c).unwrap();
+                    gotten = gotten.replacen(c, "", 1);
+                } else {
+                    write!(screen, "{}{}", Fg(word_color), c).unwrap();
+                    all_done = false;
+                }
+            }
+            if all_done {
+                the_word = flags.words();
+                gotten_characters = String::new();
+                word_color = bright_color();
+                gotten_letter_color = dim_color();
+            }
             screen.flush().unwrap();
         }
         std::thread::sleep(std::time::Duration::from_millis(300));
